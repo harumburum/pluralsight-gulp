@@ -17,7 +17,6 @@
       "allowComments": true,
       "allowRegex": true
     },
-    "validateIndentation": 4,
     "validateQuoteMarks": "'",
 
     "disallowMultipleLineStrings": true,
