@@ -1,6 +1,8 @@
 /*jshint node:true*/
 'use strict';
 
+// 
+
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
@@ -22,7 +24,7 @@ app.use(bodyParser.json());
 app.use(compress());
 app.use(logger('dev'));
 app.use(cors());
-app.use(errorHandler.init);
+app.use(errorHandler.init); 
 
 routes = require('./routes/index')(app);
 
