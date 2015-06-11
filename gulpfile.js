@@ -1,5 +1,7 @@
 var gulp = require('gulp');
 var args = require('yargs').argv;
+//var browserSync = require('browser-sync');
+var browserSync = require('browser-sync').create();
 var del = require('del');
 var config = require('./gulp.config')();
 
@@ -33,9 +35,9 @@ gulp.task('clean-styles', function(done) {
 	clean(files, done);
 });
 
-gulp.task('less-watcher', function() {
-	gulp.watch([config.less], ['styles']);
-});
+// gulp.task('less-watcher', function() {
+// 	gulp.watch([config.less], ['styles']);
+// });
 
 gulp.task('wiredep', function() {
 	log('Wire up the bower css js and our app js into the html');
@@ -73,9 +75,14 @@ gulp.task('serve-dev', ['inject'], function() {
 		.on('restart', function(ev) {
 			log('*** nodemon restarted ***');
 			log('files changed on restart:\n' + ev);
+			setTimeout(function(){
+				browserSync.notify('reloading now ...');
+				browserSync.reload({stream: false});
+			}, config.browserReloadDelay);
 		})
 		.on('start', function(){
 			log('*** nodemon started ***');
+			startBrowserSync();
 		})
 		.on('crash', function(){
 			log('*** nodemon crashed ***');
@@ -88,6 +95,45 @@ gulp.task('serve-dev', ['inject'], function() {
 
 //////
 
+function changeEvent(event) {
+	var srcPattern  = new RegExp('/.*(?=/' + config.source + ')/');
+	log('File ' + event.path.replace(srcPattern, '') + ' ' + event.type);
+}
+
+function startBrowserSync() {
+	if (args.nosync || browserSync.active) {
+		return;
+	}
+		
+	log('Starting browser-sync on port ' + port);
+	
+	 gulp.watch([config.less], ['styles'])
+	 	.on('change', function(event){ changeEvent(event); });
+	
+	var options = {
+		proxy: 'localhost:' + port,
+		port: 3030,
+		files: [
+			config.client + '**/*.*',
+			'!' + config.less,
+			config.temp + '**/*.css'
+		],
+		ghostMode: {
+			clicks: true,
+			location: false, 
+			forms: true,
+			scroll: true	
+		},
+		injectChanges: true,
+		logFileChanges: true,
+		logLevel: 'debug',
+		logPrefix: 'gulp-patterns',
+		notify: true,
+		reloadDeley: 0 //1000
+	};
+	browserSync.init(options);
+}
+
 function clean(path, done) {
 	log('Cleaning: ' + $.util.colors.red(path));
 	del(path, done);
@@ -97,10 +143,10 @@ function log(msg) {
     if (typeof(msg) === 'object') {
 		for (var item in msg) {
 			if (msg.hasOwnProperty(item)) {
-				$.util.log($.util.colors.green(msg[item]));
+				$.util.log($.util.colors.red(msg[item]));
 			}
 		}
 	} else {
-		$.util.log($.util.colors.green(msg));
+		$.util.log($.util.colors.red(msg));
 	}
 }
