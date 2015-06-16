@@ -4,7 +4,6 @@ module.exports = function() {
 	var server = './src/server/';
 	var temp = './.tmp/';
 	var config = {
-		
 		alljs : [
 			'./src/**/*.js',
 			'./*.js'
@@ -13,6 +12,7 @@ module.exports = function() {
 		client: client,
 		css: temp + 'styles.css',
 		fonts: './bower_components/font-awesome/fonts/**/*.*',
+		htmltemplates: clientApp + '**/*.html',
 		images: client + 'images/**/*.*',
 		index: client + 'index.html',
 		js: [
@@ -30,7 +30,16 @@ module.exports = function() {
 		},
 		defaultPort: 7203,
 		nodeServer: './src/server/app.js',
-		browserReloadDelay: 1000
+		browserReloadDelay: 1000,
+		
+		templateCache: {
+			file: 'templates.js',
+			options: {
+				module: 'app.core',
+				standAlone: false,
+				root: 'app/'
+			}
+		}
 	};
 	
 	config.getWiredepDefaultOptions = function() {
