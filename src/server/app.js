@@ -1,3 +1,4 @@
+/// <reference path="../../typings/node/node.d.ts"/>
 /*jshint node:true*/
 'use strict';
 
