@@ -40,6 +40,11 @@ module.exports = function() {
 				standAlone: false,
 				root: 'app/'
 			}
+		},
+		
+		optimized : {
+			app: 'app.js',
+			lib: 'lib.js'
 		}
 	};
 	
