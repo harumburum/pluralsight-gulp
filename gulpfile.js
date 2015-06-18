@@ -1,3 +1,4 @@
+/// <reference path="typings/node/node.d.ts"/>
 var gulp = require('gulp');
 var args = require('yargs').argv;
 //var browserSync = require('browser-sync');
@@ -5,12 +6,36 @@ var browserSync = require('browser-sync').create();
 var del = require('del');
 var config = require('./gulp.config')();
 
+var path = require('path');
+var _ = require('lodash');
+
 var $ = require('gulp-load-plugins')({lazy: true});
 var port = process.env.PORT || config.defaultPort;
 
 gulp.task('help', $.taskListing);
 
 gulp.task('default', ['help']);
+
+gulp.task('notify', function() {
+	var notifier = require('node-notifier');
+	
+	notifier.notify({
+	  'title': 'My notification',
+	  'message': 'Hello, there!'
+	});
+});
+
+gulp.task('notify-with-sound', function() {
+	var notifier = require('node-notifier');
+	var notifyOptions = {
+		'title': 'My notification',
+	    'message': 'Hello, there!',
+		'sound': true,
+		'contentImage': void 0,
+		'icon': path.join(__dirname, 'gulp.png'),
+	};
+	notifier.notify(notifyOptions);
+});
 
 gulp.task('vet', function() {
 	log('Analizyng source with JSHing and JSCS');
@@ -115,7 +140,21 @@ gulp.task('inject', ['wiredep', 'styles', 'templatecache'], function() {
 		.pipe(gulp.dest(config.client));
 });
 
-gulp.task('optimize', ['clean', 'inject'], function() {
+gulp.task('build', ['optimize', 'images', 'fonts'], function() {
+	log('Building everything');
+	
+	var msg = {
+		title: 'gulp build',
+		subtitle: 'Deployed to the build folder',
+		message: 'Running gulp serve-build'
+	};
+	del(config.temp);
+	log(msg);
+	
+	notify(msg)
+});
+
+gulp.task('optimize', ['inject', 'test'], function() {
 	log('Optimizing the js, css, html');
 	
 	var assets = $.useref.assets({searchPath: './'});
@@ -191,7 +230,7 @@ gulp.task('bump', function(){
 	
 });
 
-gulp.task('serve-build', ['optimize'], function() {
+gulp.task('serve-build', ['build'], function() {
 	serve(false);
 });
 
@@ -199,6 +238,16 @@ gulp.task('serve-dev', ['inject'], function() {
 	serve(true);
 });
 
+// Testing
+
+gulp.task('test', ['templatecache'], function(done) {
+	startTests(true /* singleRun */, done);
+});
+
+
+gulp.task('autotest', ['templatecache'], function(done) {
+	startTests(false /* singleRun */, done);
+});
 
 //////
 
@@ -240,6 +289,18 @@ function changeEvent(event) {
 	log('File ' + event.path.replace(srcPattern, '') + ' ' + event.type);
 }
 
+function notify(options) {
+	var notifier = require('node-notifier');
+	var notifyOptions = {
+		'title': options.title,
+		'subtitle': options.subtitle,
+	    'message': options.message,
+		'sound': true,
+		'icon': path.join(__dirname, 'gulp.png')
+	};
+	notifier.notify(notifyOptions);
+}
+
 function startBrowserSync(isDev) {
 	if (args.nosync || browserSync.active) {
 		return;
@@ -277,6 +338,29 @@ function startBrowserSync(isDev) {
 		reloadDeley: 0 //1000
 	};
 	browserSync.init(options);
+}
+
+function startTests(singleRun, done) {
+	var karma = require('karma').server;
+	var excludeFiles = [];
+	var serverSpecs = config.serverIntegrationSpecs;
+	
+	excludeFiles = serverSpecs;
+	
+	karma.start({
+		configFile: __dirname + '/karma.conf.js',
+		exclude: excludeFiles,
+		singleRun: !!singleRun
+	}, karmaCompleted);
+			
+	function karmaCompleted(karmaResult) {
+		log('Karma completed!');
+		if(karmaResult === 1) {
+			done('karma: tests failed with code ' + karmaResult);
+		} else {
+			done();
+		}
+	}
 }
 
 function clean(path, done) {
