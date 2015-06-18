@@ -115,7 +115,7 @@ gulp.task('inject', ['wiredep', 'styles', 'templatecache'], function() {
 		.pipe(gulp.dest(config.client));
 });
 
-gulp.task('optimize', ['inject'], function() {
+gulp.task('optimize', ['clean', 'inject'], function() {
 	log('Optimizing the js, css, html');
 	
 	var assets = $.useref.assets({searchPath: './'});
@@ -131,25 +131,64 @@ gulp.task('optimize', ['inject'], function() {
 				starttag: '<!-- inject:templates:js -->'
 			}))
 			.pipe(assets)
+			
 			//css
 			.pipe(cssFilter)
 			.pipe($.csso())
 			.pipe(cssFilter.restore())
 			//end css
+			
 			//js app
 			.pipe(jsAppFilter)
 			.pipe($.ngAnnotate())
 			//.pipe($.uglify())
 			.pipe(jsAppFilter.restore())
 			//end js app
+			
 			//js
 			.pipe(jsLibFilter)
 			.pipe($.uglify())
 			.pipe(jsLibFilter.restore())
 			//end js
+			
+			.pipe($.rev())
+			
 			.pipe(assets.restore())
 			.pipe($.useref())
+			
+			.pipe($.revReplace())
+			.pipe(gulp.dest(config.build))
+			.pipe($.rev.manifest())			
 			.pipe(gulp.dest(config.build));
+});
+/**
+ * Bump the version
+ * --type=pre will bump the prerelease version *.*.*.-x
+ * --type=patch or no flag will bump the patch version *.*.x
+ * --type=minor will bump the minor version *.x.*
+ * --type=major will bump the major version x.*.*
+ * --version=1.2.3 will bump to a specific version and ignore other flags
+ */
+gulp.task('bump', function(){
+	var msg = 'Bumping versions';
+	
+	var type = args.type;
+	var version = args.version;
+	var options = { };
+	if(version){
+		options.version = version;
+		msg += ' to a ' + type;
+	} else {
+		options.type = type;
+		msg += ' for a ' + type;
+	}
+	log(msg);
+	return gulp	
+			.src(config.packages)
+			.pipe($.print())
+			.pipe($.bump(options))
+			.pipe(gulp.dest(config.root));
+	
 });
 
 gulp.task('serve-build', ['optimize'], function() {
