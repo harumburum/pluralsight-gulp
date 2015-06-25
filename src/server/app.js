@@ -39,7 +39,7 @@ app.get('/ping', function(req, res, next) {
 });
 
 switch (environment) {
-    case 'build':
+    case 'build': 
         console.log('** BUILD **');
         app.use(express.static('./build/'));
         app.use('/*', express.static('./build/index.html'));
